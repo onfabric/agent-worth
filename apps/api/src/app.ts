@@ -2,10 +2,28 @@ import { CloudEventSchema } from '@agent-worth/shared';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { Elysia, t } from 'elysia';
-import { createMemoryRepository, type Repository } from './repository';
+import { createMemoryRepository, type Repository, type SessionView } from './repository';
+
+const DEFAULT_MAX_REQUEST_BODY_SIZE = 512 * 1024 * 1024;
+
+function configuredMaxRequestBodySize() {
+  const parsed = Number(Bun.env.AGENT_WORTH_MAX_REQUEST_BODY_SIZE ?? DEFAULT_MAX_REQUEST_BODY_SIZE);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MAX_REQUEST_BODY_SIZE;
+}
+
+function sessionListItem({ messages: _messages, ...session }: SessionView) {
+  return session;
+}
 
 export function createApp(repository: Repository = createMemoryRepository()) {
-  return new Elysia()
+  return new Elysia({
+    serve: {
+      maxRequestBodySize: configuredMaxRequestBodySize(),
+    },
+  })
+    .onParse(({ contentType, request }) => {
+      if (contentType === 'application/cloudevents-batch+json') return request.json();
+    })
     .use(cors())
     .use(
       swagger({
@@ -39,12 +57,14 @@ export function createApp(repository: Repository = createMemoryRepository()) {
     .get(
       '/v1/sessions',
       ({ query, repository: repo }) =>
-        repo.listSessions({
-          employeeId: query.employeeId,
-          sourceTool: query.sourceTool,
-          day: query.day,
-          usageStatus: query.usageStatus,
-        }),
+        repo
+          .listSessions({
+            employeeId: query.employeeId,
+            sourceTool: query.sourceTool,
+            day: query.day,
+            usageStatus: query.usageStatus,
+          })
+          .map(sessionListItem),
       {
         query: t.Object({
           employeeId: t.Optional(t.String()),

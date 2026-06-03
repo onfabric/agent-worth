@@ -1,4 +1,6 @@
 import { Database } from 'bun:sqlite';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 export type SyncedFileRecord = {
   source: string;
@@ -15,6 +17,7 @@ export class SyncState {
   private readonly db: Database;
 
   constructor(path: string) {
+    mkdirSync(dirname(path), { recursive: true });
     this.db = new Database(path, { create: true });
     this.db.exec(`
       create table if not exists synced_files (

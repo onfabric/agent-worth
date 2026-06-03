@@ -41,6 +41,23 @@ describe('Agent Worth API', () => {
     expect((await second.json()).skippedUnchanged).toBe(1);
   });
 
+  test('ingests CloudEvents batch media type', async () => {
+    const app = createApp(createMemoryRepository({ seed: false }));
+    const response = await app.handle(
+      new Request('http://localhost/v1/ingest/batch', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/cloudevents-batch+json',
+          authorization: 'Bearer synthetic',
+        },
+        body: JSON.stringify([syntheticTranscriptEvents[0]]),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).createdVersions).toBe(1);
+  });
+
   test('returns session and cost summaries', async () => {
     const app = createApp(createMemoryRepository());
     const sessions = await app.handle(new Request('http://localhost/v1/sessions'));
@@ -48,7 +65,9 @@ describe('Agent Worth API', () => {
 
     expect(sessions.status).toBe(200);
     expect(costs.status).toBe(200);
-    expect(((await sessions.json()) as unknown[]).length).toBeGreaterThan(0);
+    const sessionRows = (await sessions.json()) as Array<Record<string, unknown>>;
+    expect(sessionRows.length).toBeGreaterThan(0);
+    expect(sessionRows[0]).not.toHaveProperty('messages');
     expect(((await costs.json()) as { totalUsd: number }).totalUsd).toBeGreaterThan(0);
   });
 });

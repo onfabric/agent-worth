@@ -5,16 +5,14 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDownUp, CircleDollarSign, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
-import * as React from 'react';
+import { ArrowDownUp, CircleDollarSign, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -209,7 +207,6 @@ const columns: ColumnDef<SessionView>[] = [
 ];
 
 function Dashboard() {
-  const [query, setQuery] = React.useState('');
   const sessionsQuery = useQuery({
     queryKey: ['sessions'],
     queryFn: () => fetchJson<SessionView[]>('/v1/sessions', fallbackSessions),
@@ -221,19 +218,11 @@ function Dashboard() {
 
   const sessions = sessionsQuery.data ?? fallbackSessions;
   const summary = costsQuery.data ?? fallbackSummary;
-  const filtered = sessions.filter((session) =>
-    [session.employeeName, session.team, session.title, session.sourceTool, session.model]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
 
   const table = useReactTable({
-    data: filtered,
+    data: sessions,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
@@ -290,17 +279,8 @@ function Dashboard() {
 
         <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
+            <CardHeader>
               <CardTitle>Sessions</CardTitle>
-              <div className="relative w-full max-w-xs">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-[var(--muted-foreground)]" />
-                <Input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Filter sessions"
-                  className="pl-8"
-                />
-              </div>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
               <Table>

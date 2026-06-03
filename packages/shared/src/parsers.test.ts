@@ -29,6 +29,42 @@ describe('native transcript parsers', () => {
     expect(parsed.usage?.outputTokens).toBe(200);
   });
 
+  test('keeps the latest Codex cumulative token usage', () => {
+    const parsed = parseCodexJsonl(
+      [
+        JSON.stringify({
+          type: 'event_msg',
+          payload: { info: { total_token_usage: { input_tokens: 1000, output_tokens: 200 } } },
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          payload: { info: { total_token_usage: { input_tokens: 1200, output_tokens: 260 } } },
+        }),
+      ].join('\n'),
+    );
+
+    expect(parsed.usage?.inputTokens).toBe(1200);
+    expect(parsed.usage?.outputTokens).toBe(260);
+  });
+
+  test('sums Codex incremental token usage when cumulative usage is missing', () => {
+    const parsed = parseCodexJsonl(
+      [
+        JSON.stringify({
+          type: 'event_msg',
+          payload: { info: { last_token_usage: { input_tokens: 1000, output_tokens: 200 } } },
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          payload: { info: { last_token_usage: { input_tokens: 200, output_tokens: 60 } } },
+        }),
+      ].join('\n'),
+    );
+
+    expect(parsed.usage?.inputTokens).toBe(1200);
+    expect(parsed.usage?.outputTokens).toBe(260);
+  });
+
   test('extracts Claude session metadata, messages, model, and usage', () => {
     const parsed = parseClaudeJsonl(
       [

@@ -100,7 +100,8 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
   const raw = parseJsonl(input);
   let sessionId: string | undefined;
   let model: string | undefined;
-  let usage: TokenUsage | undefined;
+  let cumulativeUsage: TokenUsage | undefined;
+  let incrementalUsage: TokenUsage | undefined;
   const messages: TranscriptMessage[] = [];
 
   for (const [index, event] of raw.entries()) {
@@ -110,12 +111,16 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
 
     if (type === 'session_meta' && payload) {
       sessionId = stringValue(payload.id) ?? sessionId;
-      model = stringValue(payload.model) ?? stringValue(payload.model_provider) ?? model;
+      model = stringValue(payload.model) ?? model;
     }
 
     const totalUsage = usageFromNative(asRecord(payload?.info)?.total_token_usage);
     const lastUsage = usageFromNative(asRecord(payload?.info)?.last_token_usage);
-    usage = addUsage(usage, totalUsage ?? lastUsage);
+    if (totalUsage) {
+      cumulativeUsage = totalUsage;
+    } else {
+      incrementalUsage = addUsage(incrementalUsage, lastUsage);
+    }
 
     if (type === 'response_item' && payload) {
       const role = stringValue(payload.role);
@@ -150,7 +155,7 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
     rawFormat: 'jsonl',
     raw,
     messages,
-    usage,
+    usage: cumulativeUsage ?? incrementalUsage,
     model,
   };
 }
