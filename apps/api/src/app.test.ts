@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { syntheticTranscriptEvents } from '@agent-worth/shared';
-import { createApp } from './app';
-import { createMemoryRepository } from './repository';
+import { createApp } from '#app.ts';
+import { createMemoryRepository } from '#repositories/agent-worth.repository.ts';
 
 describe('Agent Worth API', () => {
   test('enrolls a daemon client with the development token', async () => {
