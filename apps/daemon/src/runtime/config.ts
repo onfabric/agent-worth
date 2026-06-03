@@ -1,6 +1,6 @@
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
-import { homedir } from "node:os";
+import { mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 export type DaemonConfig = {
   clientId: string;
@@ -10,9 +10,9 @@ export type DaemonConfig = {
   employeeDisplayName?: string;
 };
 
-const CONFIG_DIR = join(homedir(), ".agent-worth");
-const CONFIG_PATH = join(CONFIG_DIR, "config.json");
-const STATE_DB_PATH = join(CONFIG_DIR, "state.sqlite");
+const CONFIG_DIR = join(homedir(), '.agent-worth');
+const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
+const STATE_DB_PATH = join(CONFIG_DIR, 'state.sqlite');
 
 export class ConfigStore {
   readonly dir = CONFIG_DIR;
@@ -36,4 +36,3 @@ export class ConfigStore {
     await Bun.write(this.configPath, `${JSON.stringify(config, null, 2)}\n`);
   }
 }
-

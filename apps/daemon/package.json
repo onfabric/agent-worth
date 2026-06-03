@@ -8,7 +8,8 @@
   "scripts": {
     "codegen": "parsh-codegen generate --commands src/commands --out src/commandTree.gen.ts",
     "build": "bun run codegen && bun build src/main.ts --outdir dist --target bun",
-    "typecheck": "bun run codegen && tsc -p tsconfig.json --noEmit"
+    "check:types": "bun run codegen && bun run --bun tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun run check:types"
   },
   "dependencies": {
     "@agent-worth/shared": "workspace:*",
@@ -16,7 +17,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@parshjs/codegen": "^0.0.5"
+    "@agent-worth/typescript-config": "workspace:*",
+    "@parshjs/codegen": "^0.0.5",
+    "typescript": "catalog:"
   }
 }
-

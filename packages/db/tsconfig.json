@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "@agent-worth/typescript-config/base.json",
   "compilerOptions": {
     "composite": true,
     "declaration": true,
@@ -7,5 +7,6 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["src/**/*.ts", "drizzle.config.ts"]
+  "include": ["src", "drizzle.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

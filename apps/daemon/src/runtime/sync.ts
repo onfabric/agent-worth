@@ -1,6 +1,6 @@
-import type { DaemonContext } from "./context";
-import type { LocalTranscript } from "./sources";
-import { scanTranscripts } from "./sources";
+import type { DaemonContext } from './context';
+import type { LocalTranscript } from './sources';
+import { scanTranscripts } from './sources';
 
 type SyncOptions = {
   dryRun?: boolean;
@@ -12,7 +12,7 @@ type SyncOptions = {
 const DEFAULT_MAX_INGEST_BATCH_BYTES = 16 * 1024 * 1024;
 const maxIngestBatchBytes = Math.max(
   1024,
-  Number(Bun.env.AGENT_WORTH_INGEST_BATCH_BYTES ?? DEFAULT_MAX_INGEST_BATCH_BYTES)
+  Number(Bun.env.AGENT_WORTH_INGEST_BATCH_BYTES ?? DEFAULT_MAX_INGEST_BATCH_BYTES),
 );
 const encoder = new TextEncoder();
 
@@ -24,7 +24,7 @@ type IngestBatch = {
 
 export function createIngestBatches(
   transcripts: LocalTranscript[],
-  maxBytes = maxIngestBatchBytes
+  maxBytes = maxIngestBatchBytes,
 ): IngestBatch[] {
   const batches: IngestBatch[] = [];
   let currentTranscripts: LocalTranscript[] = [];
@@ -35,8 +35,8 @@ export function createIngestBatches(
     if (currentTranscripts.length === 0) return;
     batches.push({
       transcripts: currentTranscripts,
-      body: `[${currentEvents.join(",")}]`,
-      byteSize: currentBytes
+      body: `[${currentEvents.join(',')}]`,
+      byteSize: currentBytes,
     });
     currentTranscripts = [];
     currentEvents = [];
@@ -61,7 +61,10 @@ export function createIngestBatches(
   return batches;
 }
 
-export async function syncOnce(context: DaemonContext, options: SyncOptions = {}): Promise<{
+export async function syncOnce(
+  context: DaemonContext,
+  options: SyncOptions = {},
+): Promise<{
   scanned: number;
   changed: number;
   synced: number;
@@ -70,7 +73,12 @@ export async function syncOnce(context: DaemonContext, options: SyncOptions = {}
   const lock = Bun.file(`${context.config.dir}/sync.lock`);
 
   if (await lock.exists()) {
-    const ageMs = Date.now() - (await lock.text().then((value) => Number(value)).catch(() => 0));
+    const ageMs =
+      Date.now() -
+      (await lock
+        .text()
+        .then((value) => Number(value))
+        .catch(() => 0));
     if (ageMs < 4 * 60 * 1000) {
       return { scanned: 0, changed: 0, synced: 0 };
     }
@@ -81,7 +89,7 @@ export async function syncOnce(context: DaemonContext, options: SyncOptions = {}
   try {
     const transcripts = await scanTranscripts({
       employeeId: config.employeeId,
-      clientId: config.clientId
+      clientId: config.clientId,
     });
     const changed = options.force
       ? transcripts
@@ -94,28 +102,30 @@ export async function syncOnce(context: DaemonContext, options: SyncOptions = {}
       return {
         scanned: transcripts.length,
         changed: changed.length,
-        synced: 0
+        synced: 0,
       };
     }
 
     if (!config.serverUrl || !config.apiToken || !config.employeeId) {
-      throw new Error("daemon is not enrolled; run `agent-worth enroll --server <url> --token <token>` first");
+      throw new Error(
+        'daemon is not enrolled; run `agent-worth enroll --server <url> --token <token>` first',
+      );
     }
 
     const batches = createIngestBatches(changed);
     for (const [index, batch] of batches.entries()) {
-      const response = await fetch(new URL("/v1/ingest/batch", config.serverUrl), {
-        method: "POST",
+      const response = await fetch(new URL('/v1/ingest/batch', config.serverUrl), {
+        method: 'POST',
         headers: {
-          "content-type": "application/cloudevents-batch+json",
-          authorization: `Bearer ${config.apiToken}`
+          'content-type': 'application/cloudevents-batch+json',
+          authorization: `Bearer ${config.apiToken}`,
         },
-        body: batch.body
+        body: batch.body,
       });
 
       if (!response.ok) {
         throw new Error(
-          `sync failed: ${response.status} ${await response.text()} (batch ${index + 1}/${batches.length}, ${batch.transcripts.length} files, ${batch.byteSize} bytes)`
+          `sync failed: ${response.status} ${await response.text()} (batch ${index + 1}/${batches.length}, ${batch.transcripts.length} files, ${batch.byteSize} bytes)`,
         );
       }
     }
@@ -130,14 +140,14 @@ export async function syncOnce(context: DaemonContext, options: SyncOptions = {}
         mtimeMs: transcript.mtimeMs,
         contentHash: transcript.contentHash,
         remoteVersion: transcript.contentHash,
-        syncedAt
+        syncedAt,
       });
     }
 
     return {
       scanned: transcripts.length,
       changed: changed.length,
-      synced: changed.length
+      synced: changed.length,
     };
   } finally {
     await lock.delete().catch(() => undefined);

@@ -1,35 +1,35 @@
-import { describe, expect, test } from "bun:test";
-import { syntheticTranscriptEvents } from "@agent-worth/shared";
-import { createApp } from "./app";
-import { createMemoryRepository } from "./repository";
+import { describe, expect, test } from 'bun:test';
+import { syntheticTranscriptEvents } from '@agent-worth/shared';
+import { createApp } from './app';
+import { createMemoryRepository } from './repository';
 
-describe("Agent Worth API", () => {
-  test("enrolls a daemon client with the development token", async () => {
+describe('Agent Worth API', () => {
+  test('enrolls a daemon client with the development token', async () => {
     const app = createApp(createMemoryRepository({ seed: false }));
     const response = await app.handle(
-      new Request("http://localhost/v1/enroll", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      new Request('http://localhost/v1/enroll', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          enrollmentToken: "dev-enroll-token",
-          clientId: "client_test"
-        })
-      })
+          enrollmentToken: 'dev-enroll-token',
+          clientId: 'client_test',
+        }),
+      }),
     );
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { clientId: string; apiToken: string };
-    expect(body.clientId).toBe("client_test");
-    expect(body.apiToken.startsWith("awt_")).toBe(true);
+    expect(body.clientId).toBe('client_test');
+    expect(body.apiToken.startsWith('awt_')).toBe(true);
   });
 
-  test("ingests CloudEvents idempotently", async () => {
+  test('ingests CloudEvents idempotently', async () => {
     const app = createApp(createMemoryRepository({ seed: false }));
     const request = () =>
-      new Request("http://localhost/v1/ingest/batch", {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: "Bearer synthetic" },
-        body: JSON.stringify([syntheticTranscriptEvents[0]])
+      new Request('http://localhost/v1/ingest/batch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer synthetic' },
+        body: JSON.stringify([syntheticTranscriptEvents[0]]),
       });
 
     const first = await app.handle(request());
@@ -41,30 +41,33 @@ describe("Agent Worth API", () => {
     expect((await second.json()).skippedUnchanged).toBe(1);
   });
 
-  test("ingests CloudEvents batch media type", async () => {
+  test('ingests CloudEvents batch media type', async () => {
     const app = createApp(createMemoryRepository({ seed: false }));
     const response = await app.handle(
-      new Request("http://localhost/v1/ingest/batch", {
-        method: "POST",
-        headers: { "content-type": "application/cloudevents-batch+json", authorization: "Bearer synthetic" },
-        body: JSON.stringify([syntheticTranscriptEvents[0]])
-      })
+      new Request('http://localhost/v1/ingest/batch', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/cloudevents-batch+json',
+          authorization: 'Bearer synthetic',
+        },
+        body: JSON.stringify([syntheticTranscriptEvents[0]]),
+      }),
     );
 
     expect(response.status).toBe(200);
     expect((await response.json()).createdVersions).toBe(1);
   });
 
-  test("returns session and cost summaries", async () => {
+  test('returns session and cost summaries', async () => {
     const app = createApp(createMemoryRepository());
-    const sessions = await app.handle(new Request("http://localhost/v1/sessions"));
-    const costs = await app.handle(new Request("http://localhost/v1/costs"));
+    const sessions = await app.handle(new Request('http://localhost/v1/sessions'));
+    const costs = await app.handle(new Request('http://localhost/v1/costs'));
 
     expect(sessions.status).toBe(200);
     expect(costs.status).toBe(200);
     const sessionRows = (await sessions.json()) as Array<Record<string, unknown>>;
     expect(sessionRows.length).toBeGreaterThan(0);
-    expect(sessionRows[0]).not.toHaveProperty("messages");
+    expect(sessionRows[0]).not.toHaveProperty('messages');
     expect(((await costs.json()) as { totalUsd: number }).totalUsd).toBeGreaterThan(0);
   });
 });

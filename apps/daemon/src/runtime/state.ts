@@ -1,6 +1,6 @@
-import { Database } from "bun:sqlite";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { Database } from 'bun:sqlite';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 export type SyncedFileRecord = {
   source: string;
@@ -46,7 +46,7 @@ export class SyncState {
           remote_version as remoteVersion,
           synced_at as syncedAt
         from synced_files
-        where path_hash = ?`
+        where path_hash = ?`,
       )
       .get(pathHash) as SyncedFileRecord | undefined;
   }
@@ -71,7 +71,7 @@ export class SyncState {
           mtime_ms = excluded.mtime_ms,
           content_hash = excluded.content_hash,
           remote_version = excluded.remote_version,
-          synced_at = excluded.synced_at`
+          synced_at = excluded.synced_at`,
       )
       .run(
         record.pathHash,
@@ -81,18 +81,18 @@ export class SyncState {
         record.mtimeMs,
         record.contentHash,
         record.remoteVersion ?? null,
-        record.syncedAt ?? new Date().toISOString()
+        record.syncedAt ?? new Date().toISOString(),
       );
   }
 
   stats(): { trackedFiles: number; lastSyncedAt?: string | undefined } {
     const row = this.db
-      .query("select count(*) as trackedFiles, max(synced_at) as lastSyncedAt from synced_files")
+      .query('select count(*) as trackedFiles, max(synced_at) as lastSyncedAt from synced_files')
       .get() as { trackedFiles: number; lastSyncedAt?: string | null };
 
     return {
       trackedFiles: row.trackedFiles,
-      lastSyncedAt: row.lastSyncedAt ?? undefined
+      lastSyncedAt: row.lastSyncedAt ?? undefined,
     };
   }
 }

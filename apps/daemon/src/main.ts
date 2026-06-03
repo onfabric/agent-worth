@@ -1,14 +1,14 @@
-import { createCli } from "@parshjs/core";
-import { commandTree } from "./commandTree.gen";
-import { createDaemonContext } from "./runtime/context";
+import { createCli } from '@parshjs/core';
+import { commandTree } from './commandTree.gen';
+import { createDaemonContext } from './runtime/context';
 
 export const cli = createCli({
-  programName: "agent-worth",
+  programName: 'agent-worth',
   tree: commandTree,
-  context: createDaemonContext()
+  context: createDaemonContext(),
 });
 
-declare module "@parshjs/core" {
+declare module '@parshjs/core' {
   interface Register {
     cli: typeof cli;
   }
