@@ -8,7 +8,7 @@ build/
 coverage/
 
 # Bun
-bun.lock
+.bun/
 
 # Environment and secrets
 .env
@@ -28,3 +28,6 @@ transcript-artifacts/
 .idea/
 .vscode/
 
+# Test/runtime logs
+*.log
+*.tsbuildinfo

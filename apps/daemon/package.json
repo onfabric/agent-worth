@@ -1,0 +1,22 @@
+{
+  "name": "@agent-worth/daemon",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "agent-worth": "./src/main.ts"
+  },
+  "scripts": {
+    "codegen": "parsh-codegen generate --commands src/commands --out src/commandTree.gen.ts",
+    "build": "bun run codegen && bun build src/main.ts --outdir dist --target bun",
+    "typecheck": "bun run codegen && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@agent-worth/shared": "workspace:*",
+    "@parshjs/core": "^0.0.10",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@parshjs/codegen": "^0.0.5"
+  }
+}
+
