@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: agent_worth
+      POSTGRES_PASSWORD: agent_worth
+      POSTGRES_DB: agent_worth
+    ports:
+      - "5432:5432"
+    volumes:
+      - agent-worth-postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_worth -d agent_worth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  agent-worth-postgres:
