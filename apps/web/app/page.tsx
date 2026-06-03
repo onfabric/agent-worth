@@ -1,34 +1,41 @@
-"use client";
+'use client';
 
-import * as React from "react";
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import {
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
-  type ColumnDef
-} from "@tanstack/react-table";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { ArrowDownUp, CircleDollarSign, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+} from '@tanstack/react-table';
+import { ArrowDownUp, CircleDollarSign, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
+import * as React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 type SessionView = {
   id: string;
   employeeId: string;
   employeeName: string;
   team?: string;
-  sourceTool: "codex" | "claude-code" | "claude-cowork";
+  sourceTool: 'codex' | 'claude-code' | 'claude-cowork';
   sourceSessionId: string;
   title?: string;
   model?: string;
   provider?: string;
   startedAt?: string;
-  usageStatus: "native" | "estimated" | "missing";
+  usageStatus: 'native' | 'estimated' | 'missing';
   totalTokens: number;
   totalUsd: number;
   goalSummary: string | null;
@@ -39,44 +46,50 @@ type CostSummary = {
   totalUsd: number;
   totalTokens: number;
   sessions: number;
-  byEmployee: Array<{ employeeId: string; employeeName: string; totalUsd: number; totalTokens: number; sessions: number }>;
+  byEmployee: Array<{
+    employeeId: string;
+    employeeName: string;
+    totalUsd: number;
+    totalTokens: number;
+    sessions: number;
+  }>;
 };
 
 const fallbackSessions: SessionView[] = [
   {
-    id: "synthetic-codex",
-    employeeId: "emp_synthetic_ada",
-    employeeName: "Ada Lovelace",
-    team: "Platform",
-    sourceTool: "codex",
-    sourceSessionId: "codex_synthetic_001",
-    title: "Billing parser tests",
-    model: "gpt-5-codex",
-    provider: "openai",
-    startedAt: "2026-06-03T09:00:00.000Z",
-    usageStatus: "native",
+    id: 'synthetic-codex',
+    employeeId: 'emp_synthetic_ada',
+    employeeName: 'Ada Lovelace',
+    team: 'Platform',
+    sourceTool: 'codex',
+    sourceSessionId: 'codex_synthetic_001',
+    title: 'Billing parser tests',
+    model: 'gpt-5-codex',
+    provider: 'openai',
+    startedAt: '2026-06-03T09:00:00.000Z',
+    usageStatus: 'native',
     totalTokens: 18500,
     totalUsd: 0.0405,
     goalSummary: null,
-    proficiencyScore: null
+    proficiencyScore: null,
   },
   {
-    id: "synthetic-claude",
-    employeeId: "emp_synthetic_grace",
-    employeeName: "Grace Hopper",
-    team: "Infrastructure",
-    sourceTool: "claude-code",
-    sourceSessionId: "claude_synthetic_001",
-    title: "Sync lock refactor",
-    model: "claude-opus-4.5",
-    provider: "anthropic",
-    startedAt: "2026-06-03T11:00:00.000Z",
-    usageStatus: "native",
+    id: 'synthetic-claude',
+    employeeId: 'emp_synthetic_grace',
+    employeeName: 'Grace Hopper',
+    team: 'Infrastructure',
+    sourceTool: 'claude-code',
+    sourceSessionId: 'claude_synthetic_001',
+    title: 'Sync lock refactor',
+    model: 'claude-opus-4.5',
+    provider: 'anthropic',
+    startedAt: '2026-06-03T11:00:00.000Z',
+    usageStatus: 'native',
     totalTokens: 10800,
     totalUsd: 0.27,
     goalSummary: null,
-    proficiencyScore: null
-  }
+    proficiencyScore: null,
+  },
 ];
 
 const fallbackSummary: CostSummary = {
@@ -84,12 +97,24 @@ const fallbackSummary: CostSummary = {
   totalTokens: fallbackSessions.reduce((sum, session) => sum + session.totalTokens, 0),
   sessions: fallbackSessions.length,
   byEmployee: [
-    { employeeId: "emp_synthetic_ada", employeeName: "Ada Lovelace", totalUsd: 0.0405, totalTokens: 18500, sessions: 1 },
-    { employeeId: "emp_synthetic_grace", employeeName: "Grace Hopper", totalUsd: 0.27, totalTokens: 10800, sessions: 1 }
-  ]
+    {
+      employeeId: 'emp_synthetic_ada',
+      employeeName: 'Ada Lovelace',
+      totalUsd: 0.0405,
+      totalTokens: 18500,
+      sessions: 1,
+    },
+    {
+      employeeId: 'emp_synthetic_grace',
+      employeeName: 'Grace Hopper',
+      totalUsd: 0.27,
+      totalTokens: 10800,
+      sessions: 1,
+    },
+  ],
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   try {
@@ -102,86 +127,96 @@ async function fetchJson<T>(path: string, fallback: T): Promise<T> {
 }
 
 function currency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     minimumFractionDigits: 4,
-    maximumFractionDigits: 4
+    maximumFractionDigits: 4,
   }).format(value);
 }
 
 function compactNumber(value: number) {
-  return new Intl.NumberFormat("en-US", { notation: "compact" }).format(value);
+  return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(value);
 }
 
 const columns: ColumnDef<SessionView>[] = [
   {
-    accessorKey: "employeeName",
-    header: "Employee",
+    accessorKey: 'employeeName',
+    header: 'Employee',
     cell: ({ row }) => (
       <div className="min-w-36">
         <div className="font-medium">{row.original.employeeName}</div>
-        <div className="text-xs text-[var(--muted-foreground)]">{row.original.team ?? "Unassigned"}</div>
+        <div className="text-xs text-[var(--muted-foreground)]">
+          {row.original.team ?? 'Unassigned'}
+        </div>
       </div>
-    )
+    ),
   },
   {
-    accessorKey: "title",
-    header: "Session",
+    accessorKey: 'title',
+    header: 'Session',
     cell: ({ row }) => (
       <div className="max-w-72">
-        <div className="truncate font-medium">{row.original.title ?? row.original.sourceSessionId}</div>
-        <div className="truncate text-xs text-[var(--muted-foreground)]">{row.original.sourceSessionId}</div>
+        <div className="truncate font-medium">
+          {row.original.title ?? row.original.sourceSessionId}
+        </div>
+        <div className="truncate text-xs text-[var(--muted-foreground)]">
+          {row.original.sourceSessionId}
+        </div>
       </div>
-    )
+    ),
   },
   {
-    accessorKey: "sourceTool",
-    header: "Source",
-    cell: ({ row }) => <Badge variant="secondary">{row.original.sourceTool}</Badge>
+    accessorKey: 'sourceTool',
+    header: 'Source',
+    cell: ({ row }) => <Badge variant="secondary">{row.original.sourceTool}</Badge>,
   },
   {
-    accessorKey: "model",
-    header: "Model",
-    cell: ({ row }) => <span className="text-sm">{row.original.model ?? "Unknown"}</span>
+    accessorKey: 'model',
+    header: 'Model',
+    cell: ({ row }) => <span className="text-sm">{row.original.model ?? 'Unknown'}</span>,
   },
   {
-    accessorKey: "totalTokens",
-    header: "Tokens",
-    cell: ({ row }) => compactNumber(row.original.totalTokens)
+    accessorKey: 'totalTokens',
+    header: 'Tokens',
+    cell: ({ row }) => compactNumber(row.original.totalTokens),
   },
   {
-    accessorKey: "totalUsd",
-    header: "Cost",
-    cell: ({ row }) => <span className="font-medium">{currency(row.original.totalUsd)}</span>
+    accessorKey: 'totalUsd',
+    header: 'Cost',
+    cell: ({ row }) => <span className="font-medium">{currency(row.original.totalUsd)}</span>,
   },
   {
-    accessorKey: "usageStatus",
-    header: "Usage",
+    accessorKey: 'usageStatus',
+    header: 'Usage',
     cell: ({ row }) => (
-      <Badge variant={row.original.usageStatus === "native" ? "default" : "warning"}>{row.original.usageStatus}</Badge>
-    )
+      <Badge variant={row.original.usageStatus === 'native' ? 'default' : 'warning'}>
+        {row.original.usageStatus}
+      </Badge>
+    ),
   },
   {
-    accessorKey: "proficiencyScore",
-    header: "Evaluator",
+    accessorKey: 'proficiencyScore',
+    header: 'Evaluator',
     cell: ({ row }) => (
       <span className="text-sm text-[var(--muted-foreground)]">
-        {row.original.proficiencyScore === null ? "Pending" : row.original.proficiencyScore.toFixed(2)}
+        {row.original.proficiencyScore === null
+          ? 'Pending'
+          : row.original.proficiencyScore.toFixed(2)}
       </span>
-    )
-  }
+    ),
+  },
 ];
 
 function Dashboard() {
-  const [query, setQuery] = React.useState("");
+  const [query, setQuery] = React.useState('');
   const sessionsQuery = useQuery({
-    queryKey: ["sessions"],
-    queryFn: () => fetchJson<SessionView[]>("/v1/sessions", fallbackSessions)
+    queryKey: ['sessions'],
+    queryFn: () => fetchJson<SessionView[]>('/v1/sessions', fallbackSessions),
   });
   const costsQuery = useQuery({
-    queryKey: ["costs"],
-    queryFn: () => fetchJson<CostSummary>("/v1/costs", fallbackSummary)
+    queryKey: ['costs'],
+    queryFn: () => fetchJson<CostSummary>('/v1/costs', fallbackSummary),
   });
 
   const sessions = sessionsQuery.data ?? fallbackSessions;
@@ -189,9 +224,9 @@ function Dashboard() {
   const filtered = sessions.filter((session) =>
     [session.employeeName, session.team, session.title, session.sourceTool, session.model]
       .filter(Boolean)
-      .join(" ")
+      .join(' ')
       .toLowerCase()
-      .includes(query.toLowerCase())
+      .includes(query.toLowerCase()),
   );
 
   const table = useReactTable({
@@ -199,7 +234,7 @@ function Dashboard() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel()
+    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -208,7 +243,9 @@ function Dashboard() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <h1 className="text-xl font-semibold">Agent Worth</h1>
-            <p className="text-sm text-[var(--muted-foreground)]">AI coding-agent spend, sessions, and outcome readiness.</p>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              AI coding-agent spend, sessions, and outcome readiness.
+            </p>
           </div>
           <Button
             variant="outline"
@@ -225,10 +262,30 @@ function Dashboard() {
 
       <div className="mx-auto grid max-w-7xl gap-5 px-6 py-6">
         <section className="grid gap-4 md:grid-cols-4">
-          <Metric icon={CircleDollarSign} label="Team cost" value={currency(summary.totalUsd)} detail="Native token usage" />
-          <Metric icon={ArrowDownUp} label="Tokens synced" value={compactNumber(summary.totalTokens)} detail={`${summary.sessions} sessions`} />
-          <Metric icon={Users} label="Employees" value={String(summary.byEmployee.length)} detail="Synthetic seed data" />
-          <Metric icon={ShieldCheck} label="Evaluator" value="Staged" detail="Scores remain nullable" />
+          <Metric
+            icon={CircleDollarSign}
+            label="Team cost"
+            value={currency(summary.totalUsd)}
+            detail="Native token usage"
+          />
+          <Metric
+            icon={ArrowDownUp}
+            label="Tokens synced"
+            value={compactNumber(summary.totalTokens)}
+            detail={`${summary.sessions} sessions`}
+          />
+          <Metric
+            icon={Users}
+            label="Employees"
+            value={String(summary.byEmployee.length)}
+            detail="Synthetic seed data"
+          />
+          <Metric
+            icon={ShieldCheck}
+            label="Evaluator"
+            value="Staged"
+            detail="Scores remain nullable"
+          />
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
@@ -252,7 +309,9 @@ function Dashboard() {
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <TableHead key={header.id}>
-                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
                         </TableHead>
                       ))}
                     </TableRow>
@@ -262,7 +321,9 @@ function Dashboard() {
                   {table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id}>
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -284,11 +345,14 @@ function Dashboard() {
                   <div>
                     <div className="font-medium">{employee.employeeName}</div>
                     <div className="text-xs text-[var(--muted-foreground)]">
-                      {compactNumber(employee.totalTokens)} tokens across {employee.sessions} session
-                      {employee.sessions === 1 ? "" : "s"}
+                      {compactNumber(employee.totalTokens)} tokens across {employee.sessions}{' '}
+                      session
+                      {employee.sessions === 1 ? '' : 's'}
                     </div>
                   </div>
-                  <div className="text-right text-sm font-semibold">{currency(employee.totalUsd)}</div>
+                  <div className="text-right text-sm font-semibold">
+                    {currency(employee.totalUsd)}
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -303,7 +367,7 @@ function Metric({
   icon: Icon,
   label,
   value,
-  detail
+  detail,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -317,7 +381,9 @@ function Metric({
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <div className="text-xs font-medium uppercase text-[var(--muted-foreground)]">{label}</div>
+          <div className="text-xs font-medium uppercase text-[var(--muted-foreground)]">
+            {label}
+          </div>
           <div className="mt-1 text-2xl font-semibold">{value}</div>
           <div className="mt-1 text-xs text-[var(--muted-foreground)]">{detail}</div>
         </div>
@@ -335,4 +401,3 @@ export default function Page() {
     </QueryClientProvider>
   );
 }
-

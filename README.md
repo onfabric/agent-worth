@@ -11,6 +11,9 @@ This repository is intentionally public. Do not commit real employee transcripts
 - `apps/web`: Next.js dashboard using shadcn-style components, Tailwind CSS, TanStack Query, and TanStack Table.
 - `packages/shared`: CloudEvents contracts, native transcript parsers, token usage, cost math, and synthetic fixtures.
 - `packages/db`: Drizzle/Postgres schema, migration SQL, and synthetic seed metadata.
+- `packages/typescript-config`: Shared TypeScript configuration consumed by all workspaces.
+
+The tooling baseline is adapted from [ilbertt/bun-monorepo-starter](https://github.com/ilbertt/bun-monorepo-starter): Bun workspaces, Turborepo task orchestration, Biome formatting/linting, and commitlint conventional commit checks.
 
 ## Local development
 
@@ -39,6 +42,12 @@ bun run dev:api
 bun run dev:web
 ```
 
+Or run all persistent dev tasks through Turborepo:
+
+```bash
+bun run dev
+```
+
 The API runs on `http://localhost:3001`; the dashboard runs on `http://localhost:3000`.
 
 ## Daemon commands
@@ -58,7 +67,7 @@ The daemon stores only local metadata under `~/.agent-worth`: client config and 
 
 ```bash
 bun test
-bun run typecheck
+bun check:all
 bun run build
 bun run db:check
 ```

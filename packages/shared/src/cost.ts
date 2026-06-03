@@ -1,4 +1,4 @@
-import type { ModelPrice, SessionCost, TokenUsage, UsageStatus } from "./schemas";
+import type { ModelPrice, SessionCost, TokenUsage, UsageStatus } from './schemas';
 
 const TOKENS_PER_MILLION = 1_000_000;
 
@@ -27,7 +27,8 @@ export function calculateSessionCost(input: {
   price?: ModelPrice | undefined;
   usageStatus?: UsageStatus | undefined;
 }): SessionCost {
-  const status: UsageStatus = input.usageStatus ?? (hasNativeUsage(input.usage) ? "native" : "missing");
+  const status: UsageStatus =
+    input.usageStatus ?? (hasNativeUsage(input.usage) ? 'native' : 'missing');
 
   if (!input.usage || !input.price) {
     return {
@@ -37,17 +38,23 @@ export function calculateSessionCost(input: {
       cacheCreationUsd: 0,
       reasoningOutputUsd: 0,
       totalUsd: 0,
-      usageStatus: status
+      usageStatus: status,
     };
   }
 
   const inputUsd = componentCost(input.usage.inputTokens, input.price.inputUsdPerMillion);
   const outputUsd = componentCost(input.usage.outputTokens, input.price.outputUsdPerMillion);
-  const cachedInputUsd = componentCost(input.usage.cachedInputTokens, input.price.cachedInputUsdPerMillion);
-  const cacheCreationUsd = componentCost(input.usage.cacheCreationInputTokens, input.price.cacheCreationUsdPerMillion);
+  const cachedInputUsd = componentCost(
+    input.usage.cachedInputTokens,
+    input.price.cachedInputUsdPerMillion,
+  );
+  const cacheCreationUsd = componentCost(
+    input.usage.cacheCreationInputTokens,
+    input.price.cacheCreationUsdPerMillion,
+  );
   const reasoningOutputUsd = componentCost(
     input.usage.reasoningOutputTokens,
-    input.price.reasoningOutputUsdPerMillion || input.price.outputUsdPerMillion
+    input.price.reasoningOutputUsdPerMillion || input.price.outputUsdPerMillion,
   );
 
   const totalUsd = inputUsd + outputUsd + cachedInputUsd + cacheCreationUsd + reasoningOutputUsd;
@@ -59,7 +66,7 @@ export function calculateSessionCost(input: {
     cacheCreationUsd: roundUsd(cacheCreationUsd),
     reasoningOutputUsd: roundUsd(reasoningOutputUsd),
     totalUsd: roundUsd(totalUsd),
-    usageStatus: status
+    usageStatus: status,
   };
 }
 
@@ -67,7 +74,7 @@ export function selectCurrentPrice(
   prices: ModelPrice[],
   provider: string,
   model: string,
-  atIso: string
+  atIso: string,
 ): ModelPrice | undefined {
   const at = Date.parse(atIso);
   return prices

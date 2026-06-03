@@ -1,9 +1,9 @@
-import type { RawTranscriptPayload, SourceTool, TokenUsage, TranscriptMessage } from "./schemas";
+import type { RawTranscriptPayload, SourceTool, TokenUsage, TranscriptMessage } from './schemas';
 
 export type ParsedTranscript = {
   source: SourceTool;
   sourceSessionId: string;
-  rawFormat: "jsonl" | "json" | "unknown";
+  rawFormat: 'jsonl' | 'json' | 'unknown';
   raw: unknown;
   messages: TranscriptMessage[];
   usage?: TokenUsage | undefined;
@@ -20,15 +20,17 @@ export function parseJsonl(input: string): unknown[] {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 function stringValue(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
 function numberValue(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function usageFromNative(value: unknown): TokenUsage | undefined {
@@ -38,13 +40,14 @@ function usageFromNative(value: unknown): TokenUsage | undefined {
   const usage: TokenUsage = {
     inputTokens: numberValue(record.input_tokens) ?? numberValue(record.inputTokens) ?? 0,
     outputTokens: numberValue(record.output_tokens) ?? numberValue(record.outputTokens) ?? 0,
-    cachedInputTokens: numberValue(record.cached_input_tokens) ?? numberValue(record.cache_read_input_tokens) ?? 0,
+    cachedInputTokens:
+      numberValue(record.cached_input_tokens) ?? numberValue(record.cache_read_input_tokens) ?? 0,
     cacheCreationInputTokens:
       numberValue(record.cache_creation_input_tokens) ??
       numberValue(asRecord(record.cache_creation)?.ephemeral_5m_input_tokens) ??
       0,
     reasoningOutputTokens: numberValue(record.reasoning_output_tokens) ?? 0,
-    totalTokens: numberValue(record.total_tokens) ?? numberValue(record.totalTokens)
+    totalTokens: numberValue(record.total_tokens) ?? numberValue(record.totalTokens),
   };
 
   if (
@@ -61,7 +64,10 @@ function usageFromNative(value: unknown): TokenUsage | undefined {
   return usage;
 }
 
-function addUsage(left: TokenUsage | undefined, right: TokenUsage | undefined): TokenUsage | undefined {
+function addUsage(
+  left: TokenUsage | undefined,
+  right: TokenUsage | undefined,
+): TokenUsage | undefined {
   if (!left) return right;
   if (!right) return left;
 
@@ -71,12 +77,12 @@ function addUsage(left: TokenUsage | undefined, right: TokenUsage | undefined): 
     cachedInputTokens: left.cachedInputTokens + right.cachedInputTokens,
     cacheCreationInputTokens: left.cacheCreationInputTokens + right.cacheCreationInputTokens,
     reasoningOutputTokens: left.reasoningOutputTokens + right.reasoningOutputTokens,
-    totalTokens: (left.totalTokens ?? 0) + (right.totalTokens ?? 0)
+    totalTokens: (left.totalTokens ?? 0) + (right.totalTokens ?? 0),
   };
 }
 
 function extractText(content: unknown): string | undefined {
-  if (typeof content === "string") return content;
+  if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
     return content
       .map((part) => {
@@ -84,7 +90,7 @@ function extractText(content: unknown): string | undefined {
         return stringValue(record?.text) ?? stringValue(record?.content);
       })
       .filter(Boolean)
-      .join("\n");
+      .join('\n');
   }
   const record = asRecord(content);
   return stringValue(record?.text) ?? stringValue(record?.content);
@@ -102,7 +108,7 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
     const payload = asRecord(record?.payload);
     const type = stringValue(record?.type);
 
-    if (type === "session_meta" && payload) {
+    if (type === 'session_meta' && payload) {
       sessionId = stringValue(payload.id) ?? sessionId;
       model = stringValue(payload.model) ?? stringValue(payload.model_provider) ?? model;
     }
@@ -111,9 +117,10 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
     const lastUsage = usageFromNative(asRecord(payload?.info)?.last_token_usage);
     usage = addUsage(usage, totalUsage ?? lastUsage);
 
-    if (type === "response_item" && payload) {
+    if (type === 'response_item' && payload) {
       const role = stringValue(payload.role);
-      const messageRole = role === "user" || role === "assistant" || role === "system" ? role : undefined;
+      const messageRole =
+        role === 'user' || role === 'assistant' || role === 'system' ? role : undefined;
       if (messageRole) {
         messages.push({
           id: `codex-${index}`,
@@ -121,30 +128,30 @@ export function parseCodexJsonl(input: string): ParsedTranscript {
           text: extractText(payload.content),
           content: payload.content,
           createdAt: stringValue(record?.timestamp),
-          raw: event
+          raw: event,
         });
       }
     }
 
-    if (type === "event_msg" && payload && stringValue(payload.message)) {
+    if (type === 'event_msg' && payload && stringValue(payload.message)) {
       messages.push({
         id: `codex-event-${index}`,
-        role: "event",
+        role: 'event',
         text: stringValue(payload.message),
         createdAt: stringValue(record?.timestamp),
-        raw: event
+        raw: event,
       });
     }
   }
 
   return {
-    source: "codex",
-    sourceSessionId: sessionId ?? "unknown-codex-session",
-    rawFormat: "jsonl",
+    source: 'codex',
+    sourceSessionId: sessionId ?? 'unknown-codex-session',
+    rawFormat: 'jsonl',
     raw,
     messages,
     usage,
-    model
+    model,
   };
 }
 
@@ -160,7 +167,7 @@ export function parseClaudeJsonl(input: string): ParsedTranscript {
     const record = asRecord(event);
     const type = stringValue(record?.type);
     sessionId = stringValue(record?.sessionId) ?? sessionId;
-    title = type === "ai-title" ? extractText(record?.content) ?? title : title;
+    title = type === 'ai-title' ? (extractText(record?.content) ?? title) : title;
 
     const messageRecord = asRecord(record?.message);
     model = stringValue(messageRecord?.model) ?? model;
@@ -168,7 +175,7 @@ export function parseClaudeJsonl(input: string): ParsedTranscript {
     const toolUsage = usageFromNative(asRecord(record?.toolUseResult)?.usage);
     usage = addUsage(usage, messageUsage ?? toolUsage);
 
-    if (type === "user" || type === "assistant") {
+    if (type === 'user' || type === 'assistant') {
       messages.push({
         id: `claude-${index}`,
         role: type,
@@ -177,20 +184,20 @@ export function parseClaudeJsonl(input: string): ParsedTranscript {
         model: stringValue(messageRecord?.model),
         createdAt: stringValue(record?.timestamp),
         usage: messageUsage,
-        raw: event
+        raw: event,
       });
     }
   }
 
   return {
-    source: "claude-code",
-    sourceSessionId: sessionId ?? "unknown-claude-session",
-    rawFormat: "jsonl",
+    source: 'claude-code',
+    sourceSessionId: sessionId ?? 'unknown-claude-session',
+    rawFormat: 'jsonl',
     raw,
     messages,
     usage,
     model,
-    title
+    title,
   };
 }
 
@@ -211,7 +218,7 @@ export function parsedToPayload(input: {
     sourceMtimeMs: input.sourceMtimeMs,
     rawFormat: input.parsed.rawFormat,
     raw: input.parsed.raw,
-    messages: input.parsed.messages
+    messages: input.parsed.messages,
   };
 
   if (input.parsed.usage) payload.usage = input.parsed.usage;

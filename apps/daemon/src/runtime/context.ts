@@ -1,6 +1,6 @@
-import { fileURLToPath } from "node:url";
-import { ConfigStore } from "./config";
-import { SyncState } from "./state";
+import { fileURLToPath } from 'node:url';
+import { ConfigStore } from './config';
+import { SyncState } from './state';
 
 export type DaemonContext = {
   config: ConfigStore;
@@ -13,7 +13,6 @@ export function createDaemonContext(): DaemonContext {
   return {
     config,
     state: new SyncState(config.stateDbPath),
-    scheduledScriptPath: fileURLToPath(new URL("../scheduled.ts", import.meta.url))
+    scheduledScriptPath: fileURLToPath(new URL('../scheduled.ts', import.meta.url)),
   };
 }
-
